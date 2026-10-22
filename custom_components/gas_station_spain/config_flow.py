@@ -3,9 +3,9 @@
 from __future__ import annotations
 import logging
 from typing import Any, Self, override
-import gas_station_spain_api as gss
+from . import gas_station_spain_api as gss
 import voluptuous as vol
-from gas_station_spain_api import GasStationServerUnavailableException
+from .gas_station_spain_api import GasStationServerUnavailableException
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
