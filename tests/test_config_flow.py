@@ -18,7 +18,6 @@ from custom_components.gas_station_spain.const import (
     CONF_PERCENTAGE_DISCOUNT,
     CONF_SHOW_IN_MAP,
 )
-
 from custom_components.gas_station_spain.gas_station_spain_api.exceptions import GasStationServerUnavailableException
 
 
