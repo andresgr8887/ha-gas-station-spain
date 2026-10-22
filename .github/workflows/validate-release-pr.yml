@@ -23,7 +23,7 @@ jobs:
           PR_TITLE="${{ github.event.pull_request.title }}"
           
           # Verificar que el título comience con 'v' seguido de un número de versión
-          if [[ ! "$PR_TITLE" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          if [[ ! "$PR_TITLE" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(b[0-9]+|rc[0-9]+)?$ ]]; then
             echo "❌ El título de la PR debe ser un número de versión (ej: v2.3.1)"
             echo "Título actual: $PR_TITLE"
             exit 1
