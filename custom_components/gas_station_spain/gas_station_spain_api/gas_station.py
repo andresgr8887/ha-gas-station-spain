@@ -17,10 +17,7 @@ import aiohttp
 from .exceptions import GasStationServerUnavailableException
 
 
-BASE_URL = (
-    "https://sedeaplicaciones.minetur.gob.es/"
-    "ServiciosRESTCarburantes/PreciosCarburantes"
-)
+BASE_URL = "https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes"
 STATIONS_URL = f"{BASE_URL}/EstacionesTerrestres"
 LISTS_URL = f"{BASE_URL}/Listados"
 CACHE_SECONDS = 3600
@@ -60,6 +57,7 @@ def _create_session(headers: dict[str, str]) -> aiohttp.ClientSession:
 @dataclass
 class Product:
     """Petroleum product."""
+
     id: int
     name: str
     code: str
@@ -68,6 +66,7 @@ class Product:
 @dataclass
 class Province:
     """Province."""
+
     id: str
     name: str
 
@@ -75,6 +74,7 @@ class Province:
 @dataclass
 class Municipality:
     """Municipality."""
+
     id: str
     name: str
 
@@ -153,6 +153,7 @@ def _decimal(value: Any) -> float | None:
 @dataclass
 class GasStation:
     """Station information; station IDs are preserved across HA upgrades."""
+
     id: int
     marquee: str
     address: str
@@ -170,10 +171,7 @@ class GasStation:
             address=str(data.get("Dirección") or "").strip(),
             province=str(data.get("Provincia") or "").strip(),
             latitude=_decimal(data.get("Latitud")),
-            longitude=_decimal(
-                data.get("Longitud_x0020__x0028_WGS84_x0029_")
-                or data.get("Longitud (WGS84)")
-            ),
+            longitude=_decimal(data.get("Longitud_x0020__x0028_WGS84_x0029_") or data.get("Longitud (WGS84)")),
             municipality=str(data.get("Municipio") or "").strip().title(),
         )
 
@@ -237,10 +235,7 @@ async def _station_records(
     elif province_id is not None:
         url = f"{STATIONS_URL}/FiltroProvincia/{int(province_id):02d}"
     else:
-        raise ValueError(
-            "A municipality_id or province_id is required; national downloads "
-            "are deliberately disabled."
-        )
+        raise ValueError("A municipality_id or province_id is required; national downloads are deliberately disabled.")
     data = await _cached_json(url)
     if not isinstance(data, dict) or not isinstance(data.get("ListaEESSPrecio"), list):
         raise ValueError("Unexpected Ministry station response")
@@ -270,7 +265,8 @@ async def get_gas_stations(
 
 
 async def get_gas_station(
-    station_id: int, municipality_id: int | None = None,
+    station_id: int,
+    municipality_id: int | None = None,
 ) -> GasStation:
     """Read a station within its municipality; never download the whole country."""
     if municipality_id is None:
@@ -283,7 +279,9 @@ async def get_gas_station(
 
 
 async def get_price(
-    station_id: int, product_id: int, municipality_id: int | None = None,
+    station_id: int,
+    product_id: int,
+    municipality_id: int | None = None,
 ) -> float | None:
     """Price in euros; None means the product is absent or unpriced."""
     if municipality_id is None:
@@ -296,6 +294,7 @@ async def get_price(
 
 
 def get_products() -> list[Product]:
+    """Return stable product IDs used by existing HA entities."""
     return list(_PRODUCTS.values())
 
 
@@ -315,9 +314,7 @@ async def get_provinces() -> list[Province]:
 
 async def get_municipalities(id_province: str) -> list[Municipality]:
     """Return municipalities in the province using official IDs."""
-    payload = await _cached_json(
-        f"{LISTS_URL}/MunicipiosPorProvincia/{int(id_province):02d}"
-    )
+    payload = await _cached_json(f"{LISTS_URL}/MunicipiosPorProvincia/{int(id_province):02d}")
     if not isinstance(payload, list):
         raise ValueError("Unexpected Ministry municipality list")
     return [
