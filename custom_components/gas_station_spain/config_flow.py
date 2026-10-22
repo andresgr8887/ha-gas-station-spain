@@ -3,9 +3,9 @@
 from __future__ import annotations
 import logging
 from typing import Any, Self, override
-import gas_station_spain_api as gss
+
+import aiohttp
 import voluptuous as vol
-from gas_station_spain_api import GasStationServerUnavailableException
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
@@ -19,6 +19,8 @@ from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorMode,
 )
+from . import gas_station_spain_api as gss
+from .gas_station_spain_api import GasStationServerUnavailableException
 from .const import (
     DOMAIN,
     CONF_FIXED_DISCOUNT,
@@ -59,7 +61,15 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         try:
             result = await api_call(*args, **kwargs) if callable(api_call) and not isinstance(api_call, type) else api_call
             return result
-        except (GasStationServerUnavailableException, ConnectionError, TimeoutError, OSError):
+        except (
+            GasStationServerUnavailableException,
+            aiohttp.ClientError,
+            ConnectionError,
+            TimeoutError,
+            OSError,
+            LookupError,
+            ValueError,
+        ):
             return None
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> FlowResult:
@@ -153,7 +163,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self.show_in_map = user_input[CONF_SHOW_IN_MAP]
             self.fixed_discount = user_input[CONF_FIXED_DISCOUNT]
             self.percentage_discount = user_input[CONF_PERCENTAGE_DISCOUNT]
-            station = await self._handle_api_call(gss.get_gas_station, self.station_id)
+            station = await self._handle_api_call(
+                gss.get_gas_station,
+                self.station_id,
+                municipality_id=int(self.municipality_id),
+            )
             if station is None:
                 return self.async_abort(reason="server_unavailable")
             product = next(filter(lambda x: x.id == int(self.product_id), gss.get_products()))

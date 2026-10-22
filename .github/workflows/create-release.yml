@@ -107,8 +107,8 @@ jobs:
           
           ### 🔗 Enlaces
           
-          - [Documentación](https://github.com/MiguelAngelLV/ha-gas-station-spain)
-          - [Reportar un problema](https://github.com/MiguelAngelLV/ha-gas-station-spain/issues)
+          - [Documentación](https://github.com/andresgr8887/ha-gas-station-spain)
+          - [Reportar un problema](https://github.com/andresgr8887/ha-gas-station-spain/issues)
           
           ### 📊 Información de la Release
           
@@ -119,10 +119,15 @@ jobs:
           )
           
           # Crear la release
+          RELEASE_ARGS=()
+          if [[ "$VERSION" == *b* || "$VERSION" == *rc* ]]; then
+            RELEASE_ARGS+=(--prerelease)
+          fi
           gh release create "v$VERSION" \
             --title "v$VERSION" \
             --notes "$RELEASE_NOTES" \
-            --target main
+            --target main \
+            "${RELEASE_ARGS[@]}"
           
           echo "✅ GitHub Release v$VERSION created successfully"
 

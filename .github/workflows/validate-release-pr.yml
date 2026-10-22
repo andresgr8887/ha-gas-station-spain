@@ -2,7 +2,7 @@ name: Validate Release PR
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, labeled]
+    types: [opened, synchronize, reopened, labeled, edited]
     branches:
       - main
 
@@ -23,7 +23,7 @@ jobs:
           PR_TITLE="${{ github.event.pull_request.title }}"
           
           # Verificar que el título comience con 'v' seguido de un número de versión
-          if [[ ! "$PR_TITLE" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          if [[ ! "$PR_TITLE" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(b[0-9]+|rc[0-9]+)?$ ]]; then
             echo "❌ El título de la PR debe ser un número de versión (ej: v2.3.1)"
             echo "Título actual: $PR_TITLE"
             exit 1
@@ -124,57 +124,3 @@ jobs:
           fi
           
           echo "✅ Los archivos requeridos fueron modificados"
-
-      - name: Comment validation results
-        if: success()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const version = '${{ steps.versions.outputs.pr }}';
-            const comment = `## ✅ Validación de Release Exitosa
-            
-            La PR de release para la versión **v${version}** ha pasado todas las validaciones:
-            
-            - ✅ Formato del título correcto
-            - ✅ Versiones consistentes en todos los archivos
-            - ✅ Versión incrementada correctamente
-            - ✅ Archivos requeridos modificados
-            
-            **Versión**: v${version}
-            **Manifest**: ${version}
-            **Pyproject**: ${version}
-            
-            La PR está lista para ser revisada y mergeada.`;
-            
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            });
-
-      - name: Comment validation errors
-        if: failure()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const comment = `## ❌ Validación de Release Fallida
-            
-            La PR de release no pasó todas las validaciones. Por favor, revisa los errores en los logs del workflow.
-            
-            ### Pasos para corregir:
-            
-            1. Verifica que el título de la PR sea un número de versión válido (ej: v2.3.1)
-            2. Asegúrate de que las versiones en \`manifest.json\` y \`pyproject.toml\` coincidan
-            3. Verifica que la versión en los archivos coincida con el título de la PR
-            4. Confirma que la nueva versión sea mayor que la última versión publicada
-            
-            Revisa los logs del workflow para más detalles.`;
-            
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            });
-

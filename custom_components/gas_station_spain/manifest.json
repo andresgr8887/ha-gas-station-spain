@@ -2,14 +2,12 @@
   "domain": "gas_station_spain",
   "name": "Gasolineras de España",
   "codeowners": [
-    "@miguelangellv"
+    "@andresgr8887"
   ],
   "config_flow": true,
-  "documentation": "https://github.com/MiguelAngelLV/ha-gas-station-spain",
+  "documentation": "https://github.com/andresgr8887/ha-gas-station-spain",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/MiguelAngelLV/ha-gas-station-spain/issues",
-  "requirements": [
-    "gas-station-spain-api==1.4.0"
-  ],
-  "version": "2.3.1"
+  "issue_tracker": "https://github.com/andresgr8887/ha-gas-station-spain/issues",
+  "requirements": [],
+  "version": "2.4.0b1"
 }

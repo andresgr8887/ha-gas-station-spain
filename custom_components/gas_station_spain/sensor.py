@@ -24,10 +24,11 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-import gas_station_spain_api as gss
+from . import gas_station_spain_api as gss
 
 from .const import (
     CONF_STATION,
+    CONF_MUNICIPALITY,
     CONF_PRODUCT,
     UPDATE_INTERVAL,
     CONF_FIXED_DISCOUNT,
@@ -48,7 +49,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 
     _LOGGER.info("Creating Gas Station Spain sensor with station=%s and product=%s", gas_station_id, product_id)
 
-    coordinator = GasStationCoordinator(hass=hass, gas_station_id=gas_station_id, product_id=product_id)
+    coordinator = GasStationCoordinator(
+        hass=hass,
+        gas_station_id=gas_station_id,
+        product_id=product_id,
+        municipality_id=int(entry.data[CONF_MUNICIPALITY]),
+    )
 
     # Intentar la primera actualización pero no fallar si hay error
     try:
@@ -70,7 +76,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 class GasStationCoordinator(DataUpdateCoordinator):
     """API access coordinator."""
 
-    def __init__(self, hass: HomeAssistant, gas_station_id, product_id):
+    def __init__(self, hass: HomeAssistant, gas_station_id, product_id, municipality_id=None):
         super().__init__(
             hass=hass,
             logger=_LOGGER,
@@ -83,10 +89,14 @@ class GasStationCoordinator(DataUpdateCoordinator):
         self._longitude = None
         self._gas_station_id = gas_station_id
         self._product_id = product_id
+        self._municipality_id = municipality_id
 
     async def async_config_entry_first_refresh(self) -> None:
         try:
-            gas_station = await gss.get_gas_station(self._gas_station_id)
+            gas_station = await gss.get_gas_station(
+                self._gas_station_id,
+                municipality_id=self._municipality_id,
+            )
             self._address = gas_station.address
             self._latitude = gas_station.latitude
             self._longitude = gas_station.longitude
@@ -97,10 +107,15 @@ class GasStationCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self):
         try:
-            self._price = await gss.get_price(station_id=self._gas_station_id, product_id=self._product_id)
+            self._price = await gss.get_price(
+                station_id=self._gas_station_id,
+                product_id=self._product_id,
+                municipality_id=self._municipality_id,
+            )
             _LOGGER.debug("Updated station=%s and product=%s with original price=%s", self._gas_station_id, self._product_id, self._price)
-        except Exception:  # pylint: disable=W0718
-            _LOGGER.exception("Updated station=%s and product=%s", self._gas_station_id, self._product_id)
+        except Exception as err:  # pylint: disable=W0718
+            self._price = None
+            _LOGGER.warning("Could not update station=%s product=%s: %s", self._gas_station_id, self._product_id, err)
 
         return {
             "price": self._price,
@@ -182,6 +197,16 @@ class GasStationSensor(CoordinatorEntity, SensorEntity, RestoreEntity):
                 self._attrs["longitude"] = data["longitude"]
 
         self.async_write_ha_state()
+
+    @property
+    def available(self) -> bool:
+        """Do not report an outdated restored price as live when the API fails."""
+        return (
+            self.coordinator.last_update_success
+            and self._state is not None
+            and self.coordinator.data is not None
+            and self.coordinator.data.get("price") is not None
+        )
 
     @property
     def native_value(self) -> StateType:
