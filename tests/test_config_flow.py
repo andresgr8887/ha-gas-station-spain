@@ -4,7 +4,7 @@
 
 from unittest.mock import patch
 
-from gas_station_spain_api.exceptions import GasStationServerUnavailableException
+from custom_components.gas_station_spain.gas_station_spain_api.exceptions import GasStationServerUnavailableException
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
