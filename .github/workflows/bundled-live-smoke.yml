@@ -13,9 +13,14 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
       - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: '3.13'
       - name: Install dependencies for the HA component
-        run: uv sync --dev
+        run: uv sync --python 3.13 --dev
       - name: Verify shipping archive client, CA and a bounded live price
         run: |
           uv run python - <<'PY'
