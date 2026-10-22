@@ -1,24 +1,23 @@
 [project]
 name = "ha-gas-station-spain"
-version = "2.3.1"
+version = "2.4.0b1"
 description = "Componente para Home Assistant que muestra precio actual del combustible en las distintas gasolineras de España"
 authors = [
     { name = "Miguel Ángel López", email = "miguel.angel.lopez.vicente@gmail.com" }
 ]
 license = "MIT"
 readme = "README.md"
-repository = "https://github.com/miguelangellv/gas-station-spain"
+repository = "https://github.com/andresgr8887/ha-gas-station-spain"
 requires-python = ">=3.13.2"
 dependencies = [
     "homeassistant>=2025.10.0",
-    "gas-station-spain-api==1.4.0",
 ]
 
 [project.urls]
-Homepage = "https://github.com/miguelangel_lv/gas_station_spain/"
-Changelog = "https://github.com/miguelangel_lv/gas_station_spain/releases"
-Issues = "https://github.com/miguelangel_lv/gas_station_spain/issues"
-Repository = "https://github.com/miguelangel_lv/gas_station_spain/spook"
+Homepage = "https://github.com/andresgr8887/ha-gas-station-spain/"
+Changelog = "https://github.com/andresgr8887/ha-gas-station-spain/releases"
+Issues = "https://github.com/andresgr8887/ha-gas-station-spain/issues"
+Repository = "https://github.com/andresgr8887/ha-gas-station-spain"
 
 
 [tool.ruff.lint]
