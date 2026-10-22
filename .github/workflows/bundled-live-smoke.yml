@@ -1,0 +1,51 @@
+name: Bundled API live smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [fix/bundled-ministry-ca-beta2]
+    paths:
+      - .github/workflows/bundled-live-smoke.yml
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Install dependencies for the HA component
+        run: uv sync --dev
+      - name: Verify shipping archive client, CA and a bounded live price
+        run: |
+          uv run python - <<'PY'
+          import asyncio
+          from pathlib import Path
+          from custom_components.gas_station_spain.gas_station_spain_api import (
+              get_gas_stations,
+              get_price,
+          )
+
+          async def main():
+              cert = Path(
+                  "custom_components/gas_station_spain/"
+                  "gas_station_spain_api/certs/ACComponentesInformaticos.pem"
+              )
+              assert cert.is_file(), "The distributed CA certificate is absent"
+              stations = await asyncio.wait_for(
+                  get_gas_stations(municipality_id=355), timeout=100
+              )
+              assert stations, "The Ministry did not return test-municipality stations"
+              for station in stations:
+                  for product in (1, 4):
+                      price = await get_price(
+                          station.id, product, municipality_id=355
+                      )
+                      if price is not None:
+                          assert 0.2 < price < 5.0
+                          print("Bundled HA client validated", station.id, product, price)
+                          return
+              raise AssertionError("No live price in test municipality")
+
+          asyncio.run(main())
+          PY
