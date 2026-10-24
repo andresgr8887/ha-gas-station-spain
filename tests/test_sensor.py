@@ -4,6 +4,7 @@
 
 from unittest.mock import MagicMock, patch
 
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CURRENCY_EURO, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant, State
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -67,6 +68,7 @@ async def test_coordinator_first_refresh(
         product_id=1,
     )
 
+    coordinator.config_entry = MockConfigEntry(domain=DOMAIN, state=ConfigEntryState.SETUP_IN_PROGRESS)
     await coordinator.async_config_entry_first_refresh()
 
     assert coordinator._address == "Calle Ejemplo 123"
@@ -603,7 +605,8 @@ async def test_coordinator_first_refresh_error(
             return_value=1.459,
         ),
     ):
-        # No debe lanzar excepción
+        # First refresh requires a config entry on current Home Assistant.
+        coordinator.config_entry = MockConfigEntry(domain=DOMAIN, state=ConfigEntryState.SETUP_IN_PROGRESS)
         await coordinator.async_config_entry_first_refresh()
 
     # Los datos de la gasolinera deben ser None
