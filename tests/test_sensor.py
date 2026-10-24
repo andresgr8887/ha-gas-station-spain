@@ -649,4 +649,3 @@ async def test_setup_entry_with_api_error(
     # El sensor debe crearse aunque la API haya fallado
     assert async_add_entities.called
     assert len(async_add_entities.call_args[0][0]) == 1
-
