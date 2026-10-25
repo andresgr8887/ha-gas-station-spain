@@ -93,7 +93,22 @@ jobs:
           
           # Función para comparar versiones
           version_gt() {
-              test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"
+              python3 - "$1" "$2" <<'PY'
+          import re
+          import sys
+
+          def version_key(value):
+              match = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)(?:(b|rc)(\d+))?", value)
+              if match is None:
+                  raise ValueError(f"Unsupported release version: {value}")
+              major, minor, patch, stage, number = match.groups()
+              return (int(major), int(minor), int(patch),
+                      { "b": 0, "rc": 1, None: 2 }[stage], int(number or 0))
+
+          assert version_key("2.4.0b3") < version_key("2.4.0rc1") < version_key("2.4.0")
+          assert version_key("2.4.0") < version_key("2.4.1b1")
+          sys.exit(0 if version_key(sys.argv[1]) > version_key(sys.argv[2]) else 1)
+          PY
           }
           
           if version_gt "$PR_VERSION" "$LAST_VERSION"; then
