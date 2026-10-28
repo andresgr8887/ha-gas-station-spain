@@ -1,39 +1,37 @@
 """Gas Station sensor platform."""
 
-import logging
+from collections.abc import Mapping
 from datetime import timedelta
-from typing import Mapping, Any
-
-from homeassistant.helpers.typing import StateType
-from homeassistant.helpers.update_coordinator import (
-    DataUpdateCoordinator,
-    CoordinatorEntity,
-)
-from homeassistant.helpers.restore_state import RestoreEntity
-
-from homeassistant.const import (
-    CURRENCY_EURO,
-)
+import logging
+from typing import Any
 
 from homeassistant.components.sensor import (
-    SensorEntityDescription,
     SensorEntity,
+    SensorEntityDescription,
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import (
+    CURRENCY_EURO,
+)
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.restore_state import RestoreEntity
+from homeassistant.helpers.typing import StateType
+from homeassistant.helpers.update_coordinator import (
+    CoordinatorEntity,
+    DataUpdateCoordinator,
+)
 
 from . import gas_station_spain_api as gss
-
 from .const import (
-    CONF_STATION,
-    CONF_MUNICIPALITY,
-    CONF_PRODUCT,
-    UPDATE_INTERVAL,
     CONF_FIXED_DISCOUNT,
+    CONF_MUNICIPALITY,
     CONF_PERCENTAGE_DISCOUNT,
+    CONF_PRODUCT,
     CONF_SHOW_IN_MAP,
+    CONF_STATION,
+    UPDATE_INTERVAL,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -54,13 +52,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         gas_station_id=gas_station_id,
         product_id=product_id,
         municipality_id=int(entry.data[CONF_MUNICIPALITY]),
+        station_name=entry.title,
     )
 
     # Intentar la primera actualización pero no fallar si hay error
     try:
         await coordinator.async_config_entry_first_refresh()
-    except Exception as err:  # pylint: disable=W0718
-        _LOGGER.warning("Could not fetch initial data for station=%s: %s. Will use restored state if available.", gas_station_id, err)
+    except Exception as err:  # noqa: BLE001  # pylint: disable=W0718
+        _LOGGER.warning(
+            "Could not fetch initial data for %s (station=%s): %s. Will use restored state if available.",
+            entry.title,
+            gas_station_id,
+            err,
+        )
 
     sensor = GasStationSensor(
         entry.title,
@@ -76,7 +80,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 class GasStationCoordinator(DataUpdateCoordinator):
     """API access coordinator."""
 
-    def __init__(self, hass: HomeAssistant, gas_station_id, product_id, municipality_id=None):
+    def __init__(self, hass: HomeAssistant, gas_station_id, product_id, municipality_id=None, *, station_name=None):  # pylint: disable=too-many-arguments
         super().__init__(
             hass=hass,
             logger=_LOGGER,
@@ -90,6 +94,8 @@ class GasStationCoordinator(DataUpdateCoordinator):
         self._gas_station_id = gas_station_id
         self._product_id = product_id
         self._municipality_id = municipality_id
+        # The saved entry title is available even when the Ministry lookup fails.
+        self._station_name = station_name or f"Gas station {gas_station_id}"
 
     async def async_config_entry_first_refresh(self) -> None:
         try:
@@ -100,8 +106,13 @@ class GasStationCoordinator(DataUpdateCoordinator):
             self._address = gas_station.address
             self._latitude = gas_station.latitude
             self._longitude = gas_station.longitude
-        except Exception as err:  # pylint: disable=W0718
-            _LOGGER.warning("Could not fetch gas station data for station=%s: %s", self._gas_station_id, err)
+        except Exception as err:  # noqa: BLE001  # pylint: disable=W0718
+            _LOGGER.warning(
+                "Could not fetch gas station data for %s (station=%s): %s",
+                self._station_name,
+                self._gas_station_id,
+                err,
+            )
 
         await super().async_config_entry_first_refresh()
 
@@ -113,9 +124,15 @@ class GasStationCoordinator(DataUpdateCoordinator):
                 municipality_id=self._municipality_id,
             )
             _LOGGER.debug("Updated station=%s and product=%s with original price=%s", self._gas_station_id, self._product_id, self._price)
-        except Exception as err:  # pylint: disable=W0718
+        except Exception as err:  # noqa: BLE001  # pylint: disable=W0718
             self._price = None
-            _LOGGER.warning("Could not update station=%s product=%s: %s", self._gas_station_id, self._product_id, err)
+            _LOGGER.warning(
+                "Could not update %s (station=%s product=%s): %s",
+                self._station_name,
+                self._gas_station_id,
+                self._product_id,
+                err,
+            )
 
         return {
             "price": self._price,
