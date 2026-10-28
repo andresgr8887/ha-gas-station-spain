@@ -77,10 +77,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     async_add_entities([sensor])
 
 
-class GasStationCoordinator(DataUpdateCoordinator):
+class GasStationCoordinator(DataUpdateCoordinator):  # pylint: disable=too-many-instance-attributes
     """API access coordinator."""
 
-    def __init__(self, hass: HomeAssistant, gas_station_id, product_id, municipality_id=None, *, station_name=None):  # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments
+    def __init__(self, hass: HomeAssistant, gas_station_id, product_id, municipality_id=None, *, station_name=None):
         super().__init__(
             hass=hass,
             logger=_LOGGER,
