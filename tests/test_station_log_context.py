@@ -4,12 +4,12 @@
 
 from unittest.mock import MagicMock, patch
 
-from custom_components.gas_station_spain.const import DOMAIN
-from custom_components.gas_station_spain.sensor import GasStationCoordinator, async_setup_entry
 import pytest
+from homeassistant.config_entries import ConfigEntryState
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from homeassistant.config_entries import ConfigEntryState
+from custom_components.gas_station_spain.const import DOMAIN
+from custom_components.gas_station_spain.sensor import GasStationCoordinator, async_setup_entry
 
 
 @pytest.mark.parametrize("station_name", ["ARA-PETROSTAR POLIGONO", None])
